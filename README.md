@@ -21,7 +21,8 @@ There will be an endpoint (GET) called '**weekly_average_trips**' to get the ave
 
 This is the ER model of the schema **trips**
 
-![](/Users/martins/Documents/data/ER DEC-Jobsity Trips.png)
+![ER DEC-Jobsity Trips](https://user-images.githubusercontent.com/29830077/154868188-5fd6cca0-4520-4aa2-a723-26380a90900f.png)
+
 
 ## Notes
 
