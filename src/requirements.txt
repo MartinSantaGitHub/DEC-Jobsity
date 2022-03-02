@@ -6,3 +6,6 @@ SQLAlchemy==1.4.25
 python-dotenv==0.19.2
 psycopg2-binary==2.9.3
 dask==2021.9.0
+sse-starlette==0.10.3
+Jinja2==3.0.3
+python-multipart==0.0.5

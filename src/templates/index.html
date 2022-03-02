@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet"/>
+    <title>Trips Processing Data</title>
+  </head>
+  <body>
+    <noscript>You need Javascript to execute this App</noscript>
+    <h1 class="heading">Trips Processing Data</h1>
+    <form action="" method="post" onsubmit="startStatusUpdates(event)">
+      <input class="file-selector" name="files" type="file" multiple>
+      <button id="loadFileButton">Load Files</button>
+    </form>
+    <div>
+      <p>Filename: <span class="bold" id="filename"></span></p>
+    </div>
+    <div class="progress">
+      <progress id="percentProgress" max="100" value="0"></progress>
+      <caption>Progress <span class="percent-value bold" id="percent"></span></caption>
+    </div>
+    <div class="trips-header">
+      <h2>Average Weekly Trips</h2>
+      <form action="" onsubmit="getWeeklyAvgTrips(event)">
+        <button>Get Weekly Average Trips</button>
+      </form>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Region</th>
+          <th>Avg Trips</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+      </tbody>
+    </table>
+    <script src="{{ url_for('scripts', path='/scripts.js') }}"></script>
+  </body>
+</html>

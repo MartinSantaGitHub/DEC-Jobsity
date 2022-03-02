@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   db:
+    container_name: 'db_c'
     image: postgres:14.2
     ports:
       - "5434:5432"
@@ -15,6 +16,8 @@ services:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_HOST=${DB_HOST}
   dec:
+    container_name: 'dec_c'
+    image: 'dec:1.0'
     depends_on:
       - db
     build: ./src
@@ -24,4 +27,4 @@ services:
       - ./.env
     volumes:
       - ./files:/files
-    command: bash -c 'sleep 20; python3 upload_to_db.py && python3 main.py && uvicorn services:app --host 0.0.0.0 --reload --port 8000'
+    command: bash -c 'sleep 20; python3 upload_to_db.py && uvicorn services:router --host 0.0.0.0 --reload --port 8000'
