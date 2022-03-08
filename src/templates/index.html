@@ -23,10 +23,41 @@
       <progress id="percentProgress" max="100" value="0"></progress>
       <caption>Progress <span class="percent-value bold" id="percent"></span></caption>
     </div>
+    <div>
+      <h2 class="trips-title">Average Weekly Trips By Bounding Box</h2>
+      <form action="" onsubmit="getWeeklyAvgTripsByBoundingBox(event)">
+        <div class="trips-content">
+          <div>
+            <h4 class="point-title">Point A</h4>
+            <div class="point-content">
+              <p class="point-text">X: </p><input type="text" id="x_a">
+            </div>
+            <div class="point-content">
+              <p class="point-text">Y: </p><input type="text" id="x_b">
+            </div>
+          </div>
+          <div>
+            <h4 class="point-title">Point B</h4>
+            <div class="point-content">
+              <p class="point-text">X: </p><input type="text" id="y_a">
+            </div>
+            <div class="point-content">
+              <p class="point-text">Y: </p><input type="text" id="y_b">
+            </div>
+          </div>
+          <div class="result-content">
+            <p class="point-text">Result: </p><input disabled type="text" id="bb_result">
+          </div>
+          <button class="result-content">Get Weekly Average Trips By Bounding Box</button>
+        </div>
+      </form>
+    </div>
     <div class="trips-header">
-      <h2>Average Weekly Trips</h2>
-      <form action="" onsubmit="getWeeklyAvgTrips(event)">
-        <button>Get Weekly Average Trips</button>
+      <h2>Average Weekly Trips By Region</h2>
+      <form action="" onsubmit="getWeeklyAvgTripsByRegion(event)">
+        <div class="avg-region-button-content">
+          <button>Get Weekly Average Trips By Region</button>
+        </div>
       </form>
     </div>
     <table>

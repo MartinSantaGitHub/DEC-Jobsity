@@ -140,7 +140,7 @@ class DatabaseDML(BaseDB):
                                                    if_exists='append',
                                                    schema=self.schema)
 
-    def get_weekly_number_of_trips(self):
+    def get_weekly_avg_of_trips_by_region(self):
         sql_query = f'''WITH week_cte AS (
                             SELECT region_id,
                                    date,
@@ -162,3 +162,35 @@ class DatabaseDML(BaseDB):
                         ORDER BY weekly_avg_trips;'''
 
         return self.db_conn.export_data_to_data_frame(sql_query=sql_query)
+
+    def get_weekly_average_trips_by_bounding_box(self, x_a: float, y_a: float, x_b: float, y_b: float):
+
+        x_min = min(x_a, x_b)
+        x_max = max(x_a, x_b)
+        y_min = min(y_a, y_b)
+        y_max = max(y_a, y_b)
+
+        sql_query = f'''WITH coords_cte AS (
+                        SELECT ct.id, c.x, c.y
+                        FROM {self.schema}.coord_time ct
+                        INNER JOIN {self.schema}.coord c ON c.id = ct.origin_coord_id
+                        UNION
+                        SELECT ct.id, c.x, c.y
+                        FROM {self.schema}.coord_time ct
+                        INNER JOIN {self.schema}.coord c ON c.id = ct.dest_coord_id
+                        ),
+                        trips_bounding_box_cte AS (
+                            SELECT COUNT(*) AS num_trips
+                            FROM {self.schema}.trip t
+                            INNER JOIN coords_cte c ON t.coord_time_id = c.id
+                            WHERE x BETWEEN :x_min AND :x_max
+                            AND y BETWEEN :y_min AND :y_max
+                            GROUP BY DATE_PART('week', t.date)
+                        )
+                        SELECT AVG(num_trips) AS weekly_avg_trips_bb
+                        FROM trips_bounding_box_cte;'''
+
+        return self.db_conn.export_data_to_data_frame(sql_query=sql_query, params={'x_min': x_min,
+                                                                                   'x_max': x_max,
+                                                                                   'y_min': y_min,
+                                                                                   'y_max': y_max})

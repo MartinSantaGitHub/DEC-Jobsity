@@ -31,10 +31,36 @@ button:hover {
   background: rgba(0, 128, 128, 0.8);
 }
 
-.trips-header {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.trips-title {
+  margin-bottom: 0;
+}
+
+.trips-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 3fr 1fr 1fr;
+  row-gap: 0.25rem;
+  column-gap: 0.25rem;
+}
+
+.point-content {
+  padding-bottom: 0.25rem;
+}
+
+.point-text {
+  display: inline;
+}
+
+.point-title {
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.result-content {
+  grid-column: span 2 / span 2;
+  justify-self: center;
+  align-self: center;
+  padding-bottom: 0.35rem;
 }
 
 .trips-header h2 {
@@ -64,4 +90,10 @@ button:hover {
   border-radius: 4px;
   border: 1px solid black;
   cursor: pointer;
+}
+
+.avg-region-button-content {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 0.5rem;
 }

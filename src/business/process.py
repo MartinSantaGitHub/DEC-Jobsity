@@ -1,11 +1,14 @@
 import os
 import re
 import pandas as pd
+import glob
 from datetime import datetime
 from dask import dataframe as dd
 from tqdm import tqdm
 from fastapi import UploadFile
 from utils.event import Event
+from utils.file_process_local import FileProcessLocal
+from utils.file_process_upload import FileProcessUpload
 from business.databaseDML import DatabaseDML
 
 
@@ -30,8 +33,16 @@ class ProcessManager:
         self.on_is_finished_update -= method
 
     def start(self, files: list[UploadFile]) -> pd.DataFrame:
-        if files and not all([re.search(r'.*\.csv', f.filename) for f in files]):
-            return 'The files must be .csv files'
+        file_process = None
+
+        if not files:
+            files = glob.glob(f'{self.files_folder_path}/*.csv')
+            file_process = FileProcessLocal(files=files)
+        else:
+            if not all([re.search(r'.*\.csv', f.filename) for f in files]):
+                return 'The files must be .csv files'
+
+            file_process = FileProcessUpload(files=files, files_folder_path=self.files_folder_path)
 
         self.on_is_finished_update(False)
 
@@ -39,14 +50,9 @@ class ProcessManager:
         time_range_df = self.database_dml.get_time_range_dataframe()
 
         for i in range(files_len):
-            uploaded_file = files[i]
-            file = uploaded_file.file
-            filename = uploaded_file.filename
-            filepath = f'{self.files_folder_path}/{filename}'
-            bytes_data = file.read()
-
-            with open(f'{filepath}', "wb") as f:
-                f.write(bytes_data)
+            file_process.set_file_path_and_name(i)
+            filepath = file_process.get_file_path()
+            filename = file_process.get_file_name()
 
             df = dd.read_csv(f'{filepath}', blocksize=64000000)
             partitions = df.npartitions
@@ -82,8 +88,7 @@ class ProcessManager:
                 if perc_completed % self.percent_update_rate == 0:
                     self.on_status_update(filename, perc_completed)
 
-            if os.path.exists(f'{filepath}'):
-                os.remove(f'{filepath}')
+            file_process.delete_file()
 
         self.on_is_finished_update(True)
 

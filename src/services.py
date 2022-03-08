@@ -1,4 +1,7 @@
 import os
+
+import uvicorn
+from fastapi.params import File
 from sse_starlette.sse import EventSourceResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -22,7 +25,8 @@ PERCENT_UPDATE_RATE = int(os.environ["PERCENT_UPDATE_RATE"])
 
 db_conn = DatabaseConnection(DB_DRIVER, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME)
 database_dml = DatabaseDML(db_conn, DB_SCHEMA)
-process_manager = ProcessManager(database_dml=database_dml, files_folder=FILES_FOLDER, percent_update_rate=PERCENT_UPDATE_RATE)
+process_manager = ProcessManager(database_dml=database_dml, files_folder=FILES_FOLDER,
+                                 percent_update_rate=PERCENT_UPDATE_RATE)
 router = APIRouter()
 
 router.mount("/static", StaticFiles(directory="static"), name="static")
@@ -83,7 +87,7 @@ async def home(request: Request):
 
 
 @router.post("/uploadfiles")
-async def upload_files(files: list[UploadFile]):
+async def upload_files(files: list[UploadFile] = File(None)):
     return process_manager.start(files)
 
 
@@ -94,16 +98,17 @@ async def run_status(request: Request):
     return EventSourceResponse(event_generator)
 
 
-@router.get("/weekly_average_trips")
-async def get_weekly_average_trips(response: Response):
-    result = database_dml.get_weekly_number_of_trips()
+@router.get("/weekly_average_trips_by_region")
+async def get_weekly_average_trips_by_region(response: Response):
+    result = database_dml.get_weekly_avg_of_trips_by_region()
     json_result = None
 
     if result[1] == 0:
         result_list = []
         df = result[0]
 
-        df.apply(lambda row: result_list.append({'region': row['region'], 'weekly_avg_trips': row['weekly_avg_trips']}), axis=1)
+        df.apply(lambda row: result_list.append({'region': row['region'], 'weekly_avg_trips': row['weekly_avg_trips']}),
+                 axis=1)
 
         json_result = {"message": "", "data": result_list}
     else:
@@ -111,3 +116,26 @@ async def get_weekly_average_trips(response: Response):
         json_result = {"message": "There was an error obtaining the results"}
 
     return json_result
+
+
+@router.post("/get_weekly_average_trips_by_bounding_box")
+async def get_weekly_average_trips_by_bounding_box(request: Request, response: Response):
+    params = await request.json()
+    result = database_dml.get_weekly_average_trips_by_bounding_box(params['x_a'], params['y_a'], params['x_b'],
+                                                                   params['y_b'])
+    json_result = None
+
+    if result[1] == 0:
+        df = result[0]
+        # I had to cast the result to String because of a strange error when the result was return
+        # to the client (Exception in ASGI application - 'numpy.int64' object is not iterable)
+        json_result = {"message": "", "data": str(df['weekly_avg_trips_bb'][0])}
+    else:
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        json_result = {"message": "There was an error obtaining the results"}
+
+    return json_result
+
+# This is only for debbuging purposes
+if __name__ == "__main__":
+    uvicorn.run("services:router", host="0.0.0.0", port=8000)
