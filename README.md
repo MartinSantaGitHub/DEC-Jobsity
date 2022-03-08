@@ -25,7 +25,7 @@ You can also delete all the containers and images created with the command `bash
 
 This is the ER model of the schema **trips**
 
-![ER DEC-Jobsity Trips](https://user-images.githubusercontent.com/29830077/154868188-5fd6cca0-4520-4aa2-a723-26380a90900f.png)
+![ER DEC-Jobsity Trips](https://user-images.githubusercontent.com/29830077/157293926-6eb0af1c-acab-4f79-8936-e03065d560b5.png)
 
 
 ## Notes
