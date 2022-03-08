@@ -133,7 +133,7 @@ class DatabaseDML(BaseDB):
                                 'id_datasource_df': 'datasource_id',
                                 'id': 'coord_time_id'}, inplace=True)
 
-        trip_df = trip_df[['region_id', 'coord_time_id', 'datasource_id', 'date']]
+        trip_df = trip_df[['region_id', 'coord_time_id', 'datasource_id', 'datetime']]
 
         self.db_conn.import_data_frame_to_database(data=trip_df,
                                                    table_name='trip',
@@ -143,8 +143,8 @@ class DatabaseDML(BaseDB):
     def get_weekly_avg_of_trips_by_region(self):
         sql_query = f'''WITH week_cte AS (
                             SELECT region_id,
-                                   date,
-                                   DATE_PART('week', date) AS week
+                                   datetime,
+                                   DATE_PART('week', datetime) AS week
                             FROM {self.schema}.trip
                         ),
                         week_count_cte AS (
@@ -164,6 +164,10 @@ class DatabaseDML(BaseDB):
         return self.db_conn.export_data_to_data_frame(sql_query=sql_query)
 
     def get_weekly_average_trips_by_bounding_box(self, x_a: float, y_a: float, x_b: float, y_b: float):
+        x_a = x_a if x_a else 0.0
+        x_b = x_b if x_b else 0.0
+        y_a = y_a if y_a else 0.0
+        y_b = y_b if y_b else 0.0
 
         x_min = min(x_a, x_b)
         x_max = max(x_a, x_b)
@@ -180,14 +184,14 @@ class DatabaseDML(BaseDB):
                         INNER JOIN {self.schema}.coord c ON c.id = ct.dest_coord_id
                         ),
                         trips_bounding_box_cte AS (
-                            SELECT COUNT(*) AS num_trips
+                            SELECT COUNT(t.coord_time_id) AS num_trips
                             FROM {self.schema}.trip t
                             INNER JOIN coords_cte c ON t.coord_time_id = c.id
                             WHERE x BETWEEN :x_min AND :x_max
                             AND y BETWEEN :y_min AND :y_max
-                            GROUP BY DATE_PART('week', t.date)
+                            GROUP BY DATE_PART('week', t.datetime)
                         )
-                        SELECT AVG(num_trips) AS weekly_avg_trips_bb
+                        SELECT COALESCE(AVG(num_trips),0) AS weekly_avg_trips_bb
                         FROM trips_bounding_box_cte;'''
 
         return self.db_conn.export_data_to_data_frame(sql_query=sql_query, params={'x_min': x_min,

@@ -1,4 +1,4 @@
-from sqlalchemy import Table, inspect, Column, Integer, MetaData, String, Float, Date
+from sqlalchemy import Table, inspect, Column, Integer, MetaData, String, Float, DateTime
 from sqlalchemy.sql.ddl import CreateSchema
 from business.baseDB import BaseDB
 
@@ -81,7 +81,7 @@ class DatabaseDDL(BaseDB):
             Column('region_id', Integer),
             Column('coord_time_id', Integer),
             Column('datasource_id', Integer),
-            Column('date', Date)
+            Column('datetime', DateTime)
         )
 
         return self.__create_table(table=trip_table)

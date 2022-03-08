@@ -64,11 +64,13 @@ class ProcessManager:
                 source_df['datetime'] = source_df['datetime'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))
                 source_df['time'] = source_df['datetime'].apply(
                     lambda x: int(str(x.time().hour) + str(x.time().minute).zfill(2)))
-                source_df['date'] = source_df['datetime'].apply(lambda x: x.date())
+
+                # source_df['date'] = source_df['datetime'].apply(lambda x: x.date())
+
                 source_df['time_range_id'] = source_df['time'].apply(lambda x: time_range_df[
                     (x >= time_range_df['time_from']) & (x <= time_range_df['time_to'])]['id'].values[0])
 
-                source_df.drop(['datetime', 'time'], axis=1, inplace=True)
+                source_df.drop(['time'], axis=1, inplace=True)
 
                 regex_rule = r'\d+\.\d+'
 
