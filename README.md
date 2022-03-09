@@ -44,12 +44,12 @@ This is the ER model of the schema **trips**
 
 ## Version Changes
 
-## 2.1
+### 2.1
 
 * It was added the **Weekly Average Trips By Bounding Box** feature. In the _Run the project_ section is
 explained how to use it.
 
-## 2.0
+### 2.0
 
 * There is a UI loaded in the browser to upload the files, process them and get the weekly average trips. The processing
 of the files includes a status bar that indicates the completed percentage. 
@@ -60,7 +60,7 @@ is too small (only a hundred of rows), and it finished just in a blink.
 being processing, the user is going to see a change on the file processing status every time the file is processed a percent that is multiple of the PERCENT_UPDATE_RATE. 
 To do this, I used the subscriber event approach. The 'ProcessManager' class exposes two events and then the 'services' module subscribes to them.
 
-## 1.0
+### 1.0
 
 * There is a command `sleep 20` in the command section of the docker-compose yaml (under the _dec_ service) that is used to wait for the database
 service to be initiated.
