@@ -1,10 +1,3 @@
-"""
-NOTE:
-
-    This module is now deprecated.
-    The .csv files now are uploaded directly from the main page in the browser
-"""
-
 import os
 from dotenv import load_dotenv
 from utils.connection import DatabaseConnection
