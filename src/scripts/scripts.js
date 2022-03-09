@@ -3,6 +3,15 @@ const percentSpan = document.querySelector("#percent");
 const percentProgress = document.querySelector("#percentProgress");
 const loadFileButton = document.querySelector("#loadFileButton");
 
+function updateProgress(event) {
+    const strData = event.data.replace(/'/g, '"')
+    const objData = JSON.parse(strData);
+
+    filenameSpan.innerHTML = objData.filename;
+    percentSpan.innerHTML = `${objData.percent}%`;
+    percentProgress.value = objData.percent;
+}
+
 function startStatusUpdates(event) {
     event.preventDefault();
 
@@ -11,14 +20,7 @@ function startStatusUpdates(event) {
     const input = event.target.files;
     const evtSource = new EventSource("/status");
 
-    evtSource.addEventListener("update", function (event) {
-        const strData = event.data.replace(/'/g, '"')
-        const objData = JSON.parse(strData);
-
-        filenameSpan.innerHTML = objData.filename;
-        percentSpan.innerHTML = `${objData.percent}%`;
-        percentProgress.value = objData.percent;
-    });
+    evtSource.addEventListener("update", updateProgress);
 
     let data = {};
 

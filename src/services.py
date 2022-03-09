@@ -1,5 +1,4 @@
 import os
-
 import uvicorn
 from fastapi.params import File
 from sse_starlette.sse import EventSourceResponse
@@ -23,10 +22,25 @@ DB_SCHEMA = os.environ["DB_SCHEMA"]
 FILES_FOLDER = os.environ["FILES_FOLDER"]
 PERCENT_UPDATE_RATE = int(os.environ["PERCENT_UPDATE_RATE"])
 
+
+def update_status(filename, n):
+    router.current_file = filename
+    router.percent = n
+    router.new_data = True
+
+
+def update_is_finished(finished):
+    router.is_finished = finished
+
+
 db_conn = DatabaseConnection(DB_DRIVER, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME)
 database_dml = DatabaseDML(db_conn, DB_SCHEMA)
 process_manager = ProcessManager(database_dml=database_dml, files_folder=FILES_FOLDER,
                                  percent_update_rate=PERCENT_UPDATE_RATE)
+
+process_manager.add_subscribers_for_status_update_event(update_status)
+process_manager.add_subscribers_for_is_finished_update_event(update_is_finished)
+
 router = APIRouter()
 
 router.mount("/static", StaticFiles(directory="static"), name="static")
@@ -34,50 +48,26 @@ router.mount("/scripts", StaticFiles(directory="scripts"), name="scripts")
 
 templates = Jinja2Templates(directory="templates")
 
-current_file = None
-percent = 0
-new_data = False
-is_finished = False
-
-
-def update_status(filename, n):
-    global current_file
-    global percent
-    global new_data
-
-    current_file = filename
-    percent = n
-    new_data = True
-
-
-def update_is_finished(finished):
-    global is_finished
-
-    is_finished = finished
+router.current_file = None
+router.percent = 0
+router.new_data = False
+router.is_finished = False
 
 
 async def status_event_generator(request):
-    global new_data
-
-    process_manager.add_subscribers_for_status_update_event(update_status)
-    process_manager.add_subscribers_for_is_finished_update_event(update_is_finished)
-
     while True:
         if await request.is_disconnected():
             break
 
-        if new_data:
+        if router.new_data:
+            router.new_data = False
+
             yield {
                 "event": "update",
-                "data": {'filename': current_file, 'percent': percent}
+                "data": {'filename': router.current_file, 'percent': router.percent}
             }
 
-        new_data = False
-
-        if is_finished:
-            process_manager.remove_subscribers_for_status_update_event(update_status)
-            process_manager.remove_subscribers_for_is_finished_update_event(update_is_finished)
-
+        if router.is_finished:
             break
 
 
@@ -135,6 +125,7 @@ async def get_weekly_average_trips_by_bounding_box(request: Request, response: R
         json_result = {"message": "There was an error obtaining the results"}
 
     return json_result
+
 
 # This is only for debbuging purposes
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
-import os
 import re
 import pandas as pd
 import glob
 from datetime import datetime
+import asyncio
 from dask import dataframe as dd
 from tqdm import tqdm
 from fastapi import UploadFile
@@ -57,6 +57,27 @@ class ProcessManager:
             df = dd.read_csv(f'{filepath}', blocksize=64000000)
             partitions = df.npartitions
             partitions_perc = 100 // partitions
+            top = partitions - 1
+
+            # For testing the progress bar, uncomment the next lines and comment
+            # the next 'for loop' with its code inside.
+            # Keep in mind that you must have installed asyncio to test this functionality
+            # and do not forget to make this method async or it will throw you an error.
+            # Then in the services module, put an await clause to the call of this method in
+            # the 'uploadfiles' endpoint.
+
+            # partitions = 16
+            # partitions_perc = 100 // partitions
+            # top = partitions - 1
+
+            # for i in range(partitions):
+            #     await asyncio.sleep(1)
+            #
+            #     perc_completed = i * partitions_perc
+            #
+            #     if perc_completed % 2 == 0 or i == top:
+            #         current_perc = perc_completed if i != top else 100
+            #         self.on_status_update(filename, current_perc)
 
             for n in tqdm(range(partitions), desc=f'Processing file ({filename}) nº {i + 1} of {files_len}'):
                 source_df = df.get_partition(n).compute()
@@ -87,8 +108,9 @@ class ProcessManager:
 
                 perc_completed = n * partitions_perc
 
-                if perc_completed % self.percent_update_rate == 0:
-                    self.on_status_update(filename, perc_completed)
+                if perc_completed % self.percent_update_rate == 0 or i == top:
+                    current_perc = perc_completed if i != top else 100
+                    self.on_status_update(filename, current_perc)
 
             file_process.delete_file()
 
