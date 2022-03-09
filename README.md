@@ -47,6 +47,7 @@ This is the ER model of the schema **trips**
 ### 2.1.1
 * The progress bar didn't work very well in most cases. It was fixed, and now it shows the final 
 percentage when it finishes. The progress bar only works when processing big files.
+* Fixed Average Weekly Trips By Bounding Box functionality.
 
 ### 2.1
 
