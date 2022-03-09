@@ -30,8 +30,7 @@ The first one is used to get the average weekly number of trips in some sector d
 to get the average weekly number of trips by region. You may be wonder 'how do I define the bounding box and what is that bounding box'.
 In the UI there are two sections, Point A and Point B. In the input boxes, you have to define two points 
 (coordinates X and Y for each one, respectively) that represent the points of the hypotenuse of the bi-rectangled triangle that
-defines the 'box' area from where you want to get the average weekly number of trips. At more distant points,
-more big the box area is.
+defines the 'box' area from where you want to get the average weekly number of trips.
 
 3. When you're done, you can open another terminal and run `bash stop.sh` to stop the server and the database services. 
 You can also delete all the containers and images created with the command `bash delete.sh`
