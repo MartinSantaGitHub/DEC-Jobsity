@@ -52,12 +52,10 @@ percentage when it finishes. The progress bar only works when processing big fil
 * Fixed Average Weekly Trips By Bounding Box functionality.
 
 ### 2.1
-
 * It was added the **Weekly Average Trips By Bounding Box** feature. In the _Run the project_ section is
 explained how to use it.
 
 ### 2.0
-
 * There is a UI loaded in the browser to upload the files, process them and get the weekly average trips. The processing
 of the files includes a status bar that indicates the completed percentage. 
 * When you choose and load a file, it starts to process in the backend populating the model's tables. The user can see the status of the process in the browser. 
@@ -68,7 +66,6 @@ being processing, the user is going to see a change on the file processing statu
 To do this, I used the subscriber event approach. The 'ProcessManager' class exposes two events and then the 'services' module subscribes to them.
 
 ### 1.0
-
 * There is a command `sleep 20` in the command section of the docker-compose yaml (under the _dec_ service) that is used to wait for the database
 service to be initiated.
 * Every time you upload a file, it's going to be processed and that means that new rows are going to be added to the model. 
