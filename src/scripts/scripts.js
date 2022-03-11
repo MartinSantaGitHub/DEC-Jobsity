@@ -12,31 +12,12 @@ function updateProgress(event) {
     percentProgress.value = objData.percent;
 }
 
-function startStatusUpdates(event) {
-    event.preventDefault();
-
-    loadFileButton.disabled = true;
-
-    const input = event.target.files;
-    const evtSource = new EventSource("/status");
-
-    evtSource.addEventListener("update", updateProgress);
-
-    let data = {};
-
-    if (input.files.length) {
-        data = new FormData();
-
-        for (const file of input.files) {
-            data.append('files', file);
-        }
-    }
-
-    fetch('/uploadfiles', {
+function uploadFiles(inputFile, data, evtSource, userId) {
+    fetch(`/uploadfiles/?user_id=${userId}`, {
         method: 'POST',
         body: data
     }).then(async (response) => {
-        input.value = ""
+        inputFile.value = ""
         loadFileButton.disabled = false;
         percentProgress.value = 0;
         filenameSpan.innerHTML = "";
@@ -44,6 +25,30 @@ function startStatusUpdates(event) {
         evtSource.close();
         alert(await response.json());
     });
+}
+
+function startStatusUpdates(event) {
+    event.preventDefault();
+
+    loadFileButton.disabled = true;
+
+    const userId = parseFloat(document.querySelector("#user_id").value);
+    const inputFile = event.target.files;
+    const evtSource = new EventSource(`/status/?user_id=${userId}`);
+
+    evtSource.addEventListener("update", updateProgress);
+
+    let data = {};
+
+    if (inputFile.files.length) {
+        data = new FormData();
+
+        for (const file of inputFile.files) {
+            data.append('files', file);
+        }
+    }
+
+    evtSource.onopen = uploadFiles(inputFile, data, evtSource, userId);
 }
 
 function showWeeklyAvgTrips(resObj) {

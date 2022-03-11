@@ -12,6 +12,7 @@
   <body>
     <noscript>You need Javascript to execute this App</noscript>
     <h1 class="heading">Trips Processing Data</h1>
+    <input type="hidden" id="user_id" value="{{ user_id }}">
     <form action="" method="post" onsubmit="startStatusUpdates(event)">
       <input class="file-selector" name="files" type="file" multiple>
       <button id="loadFileButton">Load Files</button>

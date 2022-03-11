@@ -1,6 +1,8 @@
 import os
 import uvicorn
-from fastapi.params import File
+from datetime import datetime
+from threading import Semaphore
+from fastapi.params import File, Query
 from sse_starlette.sse import EventSourceResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -23,14 +25,16 @@ FILES_FOLDER = os.environ["FILES_FOLDER"]
 PERCENT_UPDATE_RATE = int(os.environ["PERCENT_UPDATE_RATE"])
 
 
-def update_status(filename, n):
-    router.current_file = filename
-    router.percent = n
-    router.new_data = True
+def update_status(filename, n, user_id: float):
+    current_user = router.users[user_id]
+
+    current_user['current_file'] = filename
+    current_user['percent'] = n
+    current_user['new_data'] = True
 
 
-def update_is_finished(finished):
-    router.is_finished = finished
+def update_is_finished(is_finished, user_id: float):
+    router.users[user_id]['is_finished'] = is_finished
 
 
 db_conn = DatabaseConnection(DB_DRIVER, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME)
@@ -41,49 +45,66 @@ process_manager = ProcessManager(database_dml=database_dml, files_folder=FILES_F
 process_manager.add_subscribers_for_status_update_event(update_status)
 process_manager.add_subscribers_for_is_finished_update_event(update_is_finished)
 
+semaphore = Semaphore(value=1)
+
 router = APIRouter()
 
 router.mount("/static", StaticFiles(directory="static"), name="static")
 router.mount("/scripts", StaticFiles(directory="scripts"), name="scripts")
 
 templates = Jinja2Templates(directory="templates")
-
-router.current_file = None
-router.percent = 0
-router.new_data = False
-router.is_finished = False
+router.users = {}
 
 
-async def status_event_generator(request):
+async def status_event_generator(request, user_id: float):
+    current_user = router.users[user_id]
+
     while True:
         if await request.is_disconnected():
+            del current_user
             break
 
-        if router.new_data:
-            router.new_data = False
+        if current_user['new_data']:
+            current_user['new_data'] = False
 
             yield {
                 "event": "update",
-                "data": {'filename': router.current_file, 'percent': router.percent}
+                "data": {'filename': current_user['current_file'], 'percent': current_user['percent']}
             }
 
-        if router.is_finished:
+        if current_user['is_finished']:
+            del current_user
             break
+
+
+def get_id():
+    with semaphore:
+        user_id = datetime.now().timestamp()
+        router.users[user_id] = {
+            'current_file': None,
+            'router.percent': 0,
+            'router.new_data': False,
+            'router.is_finished': False
+        }
+
+        return user_id
 
 
 @router.get("/")
 async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    user_id = get_id()
+
+    return templates.TemplateResponse("index.html", {"request": request, "user_id": user_id})
 
 
-@router.post("/uploadfiles")
-async def upload_files(files: list[UploadFile] = File(None)):
-    return process_manager.start(files)
+@router.post("/uploadfiles/")
+async def upload_files(files: list[UploadFile] = File(None), user_id: float = Query(...)):
+    return await process_manager.start(files, user_id)
 
 
-@router.get('/status')
-async def run_status(request: Request):
-    event_generator = status_event_generator(request)
+@router.get('/status/')
+async def run_status(request: Request, user_id: float = Query(...)):
+    event_generator = status_event_generator(request, user_id)
 
     return EventSourceResponse(event_generator)
 

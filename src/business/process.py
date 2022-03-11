@@ -1,8 +1,8 @@
 import re
 import pandas as pd
 import glob
-from datetime import datetime
 import asyncio
+from datetime import datetime
 from dask import dataframe as dd
 from tqdm import tqdm
 from fastapi import UploadFile
@@ -13,7 +13,7 @@ from business.databaseDML import DatabaseDML
 
 
 class ProcessManager:
-    def __init__(self, database_dml: DatabaseDML, files_folder: str, percent_update_rate: int = 5):
+    def __init__(self, database_dml: DatabaseDML, files_folder: str, percent_update_rate: int = 2):
         self.files_folder_path = f'../{files_folder}'
         self.database_dml = database_dml
         self.on_status_update = Event()
@@ -32,11 +32,14 @@ class ProcessManager:
     def remove_subscribers_for_is_finished_update_event(self, method):
         self.on_is_finished_update -= method
 
-    def start(self, files: list[UploadFile]) -> pd.DataFrame:
+    async def start(self, files: list[UploadFile], user_id: float) -> pd.DataFrame:
         file_process = None
 
         if not files:
             files = glob.glob(f'{self.files_folder_path}/*.csv')
+
+            files.sort()
+
             file_process = FileProcessLocal(files=files)
         else:
             if not all([re.search(r'.*\.csv', f.filename) for f in files]):
@@ -44,7 +47,7 @@ class ProcessManager:
 
             file_process = FileProcessUpload(files=files, files_folder_path=self.files_folder_path)
 
-        self.on_is_finished_update(False)
+        self.on_is_finished_update(False, user_id)
 
         files_len = len(files)
         time_range_df = self.database_dml.get_time_range_dataframe()
@@ -59,12 +62,15 @@ class ProcessManager:
             partitions_perc = 100 // partitions
             top = partitions - 1
 
+            # This line lets the thread be released so that it could handle the
+            # 'status_event_generator' function in the 'services' module. Otherwise, it must be waited
+            # to finish this process until the 'status_event_generator' function can be executed.
+            # This happens because of the GIL.
+            await asyncio.sleep(0.001)
+            self.on_status_update(filename, 0, user_id)
+
             # For testing the progress bar, uncomment the next lines and comment
             # the next 'for loop' with its code inside.
-            # Keep in mind that you must have installed asyncio to test this functionality
-            # and do not forget to make this method async or it will throw you an error.
-            # Then in the services module, put an await clause to the call of this method in
-            # the 'uploadfiles' endpoint.
 
             # partitions = 16
             # partitions_perc = 100 // partitions
@@ -77,7 +83,7 @@ class ProcessManager:
             #
             #     if perc_completed % 2 == 0 or i == top:
             #         current_perc = perc_completed if i != top else 100
-            #         self.on_status_update(filename, current_perc)
+            #         self.on_status_update(filename, current_perc, user_id)
 
             for n in tqdm(range(partitions), desc=f'Processing file ({filename}) nº {i + 1} of {files_len}'):
                 source_df = df.get_partition(n).compute()
@@ -108,12 +114,18 @@ class ProcessManager:
 
                 perc_completed = n * partitions_perc
 
-                if perc_completed % self.percent_update_rate == 0 or i == top:
-                    current_perc = perc_completed if i != top else 100
-                    self.on_status_update(filename, current_perc)
+                if perc_completed % self.percent_update_rate == 0 or n == top:
+                    current_perc = perc_completed if n != top else 100
+
+                    # This line lets the thread be released so that it could handle the
+                    # 'status_event_generator' function in the 'services' module. Otherwise, it must be waited
+                    # to finish this process until the 'status_event_generator' function can be executed.
+                    # This happens because of the GIL.
+                    await asyncio.sleep(0.001)
+                    self.on_status_update(filename, current_perc, user_id)
 
             file_process.delete_file()
 
-        self.on_is_finished_update(True)
+        self.on_is_finished_update(True, user_id)
 
         return 'All files were processed successfully'
