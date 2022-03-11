@@ -43,6 +43,9 @@ This is the ER model of the schema **trips**
 
 ## Version Changes
 
+### 2.2
+* Added support to the progress bar for multi connected users.
+
 ### 2.1.1
 * The progress bar didn't work very well in most cases. It was fixed, and now it shows the final 
 percentage when it finishes. The progress bar only works when processing big files.
