@@ -46,7 +46,6 @@ process_manager.add_subscribers_for_status_update_event(update_status)
 process_manager.add_subscribers_for_is_finished_update_event(update_is_finished)
 
 semaphore = Semaphore(value=1)
-
 router = APIRouter()
 
 router.mount("/static", StaticFiles(directory="static"), name="static")
